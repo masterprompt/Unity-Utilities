@@ -1,0 +1,9 @@
+{
+    "name": "unity-utilities",
+    "version": "1.0.0",
+    "description": "Utilities for Unity",
+    "author": "Casey Kerr <masterprompt@gmail.com> (https://twitter.com/Casey_Kerr)",
+    "scripts" : {
+        "build":"unity -quit -batchmode -nographics -executeMethod PackageBuilder.Build"
+    }
+}
