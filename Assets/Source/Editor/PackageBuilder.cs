@@ -39,7 +39,7 @@ namespace Source
         {
             var filePathes = GetFilePathes().Select(MakeRelative);
             var version = LoadVersion(PackageJsonPath);
-            AssetDatabase.ExportPackage(filePathes.ToArray(), PackageName + "." + version + ".package", PackageOptions);
+            AssetDatabase.ExportPackage(filePathes.ToArray(), PackageName + "." + version + ".unitypackage", PackageOptions);
         }
 
         private static IEnumerable<string> GetFilePathes()
