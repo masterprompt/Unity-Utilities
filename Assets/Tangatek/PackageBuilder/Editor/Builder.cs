@@ -11,64 +11,58 @@ namespace Tangatek.PackageBuilder
 {
     public class Builder
     {
-        private Package package;
-        
-        [MenuItem("Package Builder/Build Packages")]
-        public static void BuildPackages()
+        private static ExportPackageOptions exportPackageOptions = ExportPackageOptions.IncludeDependencies;
+
+        public static void Build(Package package)
         {
-            //    Get a list of classes that extend Package
-            //    Build each package
+            if(package.packageConfiguration==null) throw new Exception("No package configuration found.");
+            //    If we don't have a list of directories in the package, then use the package location
+            var validDirectories = package.packageConfiguration.importDirectories.Count > 0
+                ? package.packageConfiguration.importDirectories
+                : new List<string>()
+                {
+                    Path.GetDirectoryName(AssetDatabase.GetAssetPath(package))
+                };
+            //    Get list of files from directories
+            var  fileNames = validDirectories.Select(FileHelper.GetRecursiveFileNames)
+                .Flatten()
+                .Select(FileHelper.MakePathRelative);
+            
+            //    Filter out excluded extensions
+            if (package.packageConfiguration.excludeExtensions.Count > 0) fileNames = fileNames.Where(FileHelper.ExcludesExtensions(package.packageConfiguration.excludeExtensions));
+            //    Filter out any extension that isn't in the included extensions list
+            if (package.packageConfiguration.includedExtensions.Count > 0) fileNames = fileNames.Where(FileHelper.IncludesExtensions(package.packageConfiguration.includedExtensions));
+            var packageName = package.name;
+            foreach (var nameBehavior in package.packageConfiguration.nameBehaviors)
+                packageName = nameBehavior.ProcessName(packageName);
+            var packagePath = package.packageConfiguration.exportPath + packageName + package.packageConfiguration.exportExtension;
+            Directory.CreateDirectory(package.packageConfiguration.exportPath);
+            AssetDatabase.ExportPackage(fileNames.ToArray(), packagePath, exportPackageOptions);
+            AssetDatabase.Refresh();
         }
 
-        public void Build()
+        /// <summary>
+        /// Build all packages in project
+        /// </summary>
+        [MenuItem("Package Builder/Build All Packages")]
+        public static void BuildAll()
         {
-            var filePathes = GetFiles().Select(MakeRelative);
-            var packagePath = package.ExportPath + package.Name + "." + package.Version + "." + package.Extension;
-            AssetDatabase.ExportPackage(filePathes.ToArray(), packagePath, package.ExportOptions);
+            AssetDatabase
+                .FindAssets("t:Package", null)
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Select(LoadAsset<Package>)
+                .ForEach(Build);
         }
 
-        private IEnumerable<string> GetFiles()
+        /// <summary>
+        /// Convienence method for loading an asset
+        /// </summary>
+        /// <param name="path"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        private static T LoadAsset<T>(string path) where T: UnityEngine.Object
         {
-            var fileNames = new List<string>();
-            package.ValidDirectories.ForEach(directoryName =>
-            {
-                fileNames.AddRange(GetFileNames(Application.dataPath + "/" + directoryName));
-            });
-            return fileNames;
-        }
-
-        private IEnumerable<string> GetFileNames(string path)
-        {
-            var fileNames = new List<string>();
-            fileNames.AddRange(GetValidFilesInPath(path));
-            Directory.GetDirectories(path).ForEach(directoryPath =>
-            {
-                fileNames.AddRange(GetFileNames(directoryPath));
-            });
-            return fileNames;
-        }
-
-        private IEnumerable<string> GetValidFilesInPath(string path)
-        {
-            var directoryInfo = new DirectoryInfo(path);
-            return directoryInfo.GetFiles().Select(fileInfo => fileInfo.ToString()).Where(IsValidPath);
-        }
-       
-        private bool IsValidPath(string path)
-        {
-            return IsValidExtension(Path.GetExtension(path));
-        }
-        
-        private bool IsValidExtension(string extension)
-        {
-            return package.ValidFileExtensions.Contains(extension);
-        }
-
-        private static string MakeRelative(string path)
-        {
-            var baseUri = new Uri(Application.dataPath);
-            var pathUri = new Uri(path);
-            return baseUri.MakeRelativeUri(pathUri).ToString();
+            return (T)AssetDatabase.LoadAssetAtPath(path, typeof(T));
         }
     }
 }
