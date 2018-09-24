@@ -23,6 +23,7 @@ node_modules/
 #   Unity Builds
 *.apk
 *.unitypackage
+!Assets/Packages/*.unitypackage
 
 #   Unity3D generated meta files
 *.pidb.meta

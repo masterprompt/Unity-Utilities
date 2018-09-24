@@ -43,5 +43,18 @@ namespace Tangatek
             var list = enumerable as IList<T> ?? enumerable.ToList(); 
             return list.Count == 0 ? default(T) : list[Mathf.FloorToInt(UnityEngine.Random.Range(0, list.Count))];
         }
+
+        /// <summary>
+        /// Flattens a 2D array
+        /// </summary>
+        /// <param name="source"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static IEnumerable<T> Flatten<T>(this IEnumerable<IEnumerable<T>> source)
+        {
+            var list = new List<T>();
+            source.ForEach(item => list.AddRange(item));
+            return list;
+        }
     }
 }

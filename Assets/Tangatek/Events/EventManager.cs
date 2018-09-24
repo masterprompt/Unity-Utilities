@@ -9,12 +9,14 @@ namespace Tangatek
     [CreateAssetMenu(menuName="Scriptables/Events/Manager")]
     public class EventManager : ScriptableObject
     {
+        public bool debug;
         private readonly EventPublisher eventPublisher = new EventPublisher();
 
         private readonly EventPublisher.Catalog eventPublisherCatalog = new EventPublisher.Catalog();
         
         public void RaiseEvent(ScriptableEvent eventType)
         {
+            if(debug) Debug.Log("EVENT: " + eventType.name);
             //    Raise general events
             eventPublisher.RaiseEvent(eventType);
             //    Raise subscribed events
